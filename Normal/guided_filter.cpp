@@ -107,7 +107,7 @@ int main() {
     // Vectori pentru canalele Y, U, V ale imaginii de ghidare
     vector<double> I_Y(N), I_U(N), I_V(N);
     // Vector pentru imaginea de procesat (grayscale)
-    vector<double> p_grayscale(N); // This will effectively be q_Y (output luminance)
+    vector<double> p_grayscale(N);
 
     // Conversie de la RGB la YUV pentru imaginea de ghidare
     // Normalizăm imaginea de procesat (grayscale)
@@ -131,31 +131,36 @@ int main() {
         }
     }
 
-    int r = 5;      // Raza filtrului
-    double eps = 0.01; // Parametru de regularizare
+    int r = 5;       // Raza filtrului
+    double eps = 0.1; // Parametru de regularizare
 
-    // Vectori pentru canalele filtrate de iesire (U și V)
+    // Vectori pentru canalele filtrate de iesire (Y, U, și V)
+    vector<double> q_Y(N); // New vector for filtered Y
     vector<double> q_U(N), q_V(N);
 
-    // APELAREA FILTRULUI GHIDAT PENTRU FIECARE CANAL DE CULOARE (U și V)
-    // Guide (I) is the grayscale input (p_grayscale).
-    // Input (p) is the U/V channel from the color guide image (I_U, I_V).
+    // APELAREA FILTRULUI GHIDAT PENTRU FIECARE CANAL
+    // Guide (I) is I_Y (luminance from target.png)
+    // Input (p) is p_grayscale (luminance from input.png)
+    cout << "Aplicare filtru ghidat pe canalul Y (Luminance)..." << endl;
+    guided_filter(I_Y, p_grayscale, q_Y, width_I, height_I, r, eps);
+
+    // Guide (I) is p_grayscale (luminance from input.png) for U and V
+    // Input (p) is I_U/I_V (chrominance from target.png)
     cout << "Aplicare filtru ghidat pe canalul U (Chrominance Albastru-Galben)..." << endl;
     guided_filter(p_grayscale, I_U, q_U, width_I, height_I, r, eps);
     cout << "Aplicare filtru ghidat pe canalul V (Chrominance Rosu-Verde)..." << endl;
     guided_filter(p_grayscale, I_V, q_V, width_I, height_I, r, eps);
 
-    // Acum trebuie să convertim înapoi Y (care este p_grayscale), q_U și q_V la RGB
+    // Acum trebuie să convertim înapoi q_Y, q_U și q_V la RGB
     vector<unsigned char> output_image_data(N * 3); // 3 canale pentru imaginea de iesire color
 
     for (int i = 0; i < N; i++) {
-        // Obținem valorile Y, U, V
-        double Y = p_grayscale[i]; // The grayscale input IS our output luminance
+        // Obținem valorile Y, U, V filtrate
+        double Y = q_Y[i]; // Use the filtered Y channel
         double U = q_U[i] - 0.5;    // Subtract 0.5 to revert U to its original range
         double V = q_V[i] - 0.5;    // Subtract 0.5 to revert V to its original range
 
         // Convert YUV back to RGB (BT.709)
-        // These formulas are the inverse of the ones above
         double R = Y + 1.28033 * V;
         double G = Y - 0.21482 * U - 0.38059 * V;
         double B = Y + 2.12798 * U;
