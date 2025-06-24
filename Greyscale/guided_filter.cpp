@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm> // Required for std::max and std::min
+#include <time.h>
 using namespace std;
 
 // box filter simplu: media locala
@@ -74,6 +75,10 @@ int main() {
     int width, height, channels_actual; // Use single width/height as both images must match
     const int desired_channels = 1; // We want 1 channel for grayscale
 
+    clock_t start;
+    clock_t end;
+    double time_taken;
+
     // CALEA CĂTRE IMAGINEA DE GHIDARE (ACUM GRAYSCALE)
     unsigned char* guide_image_data = stbi_load("Images/Input/target.png", &width, &height, &channels_actual, desired_channels);
     if (!guide_image_data) {
@@ -108,16 +113,18 @@ int main() {
         p_grayscale[i] = process_image_data[i] / 255.0;
     }
 
-    int r = 0.5;        // Raza filtrului (am mărit-o un pic, 0.5 e cam mic pentru o rază în pixeli)
-    double eps = 0.001; // Parametru de regularizare (valoare tipică)
+    int r = 1;          // Raza filtrului (am mărit-o un pic, 0.5 e cam mic pentru o rază în pixeli)
+    double eps = 0.1; // Parametru de regularizare (valoare tipică)
 
     // Vector pentru imaginea filtrată de ieșire (grayscale)
     vector<double> q_grayscale(N);
 
     // APELAREA FILTRULUI GHIDAT PENTRU IMAGINILE GRAYSCALE
     cout << "Aplicare filtru ghidat pe imagini grayscale..." << endl;
+    start = clock();
     guided_filter(I_grayscale, p_grayscale, q_grayscale, width, height, r, eps);
-
+    end = clock();
+    time_taken = ((double) (end - start)) / CLOCKS_PER_SEC;
     // Acum trebuie să convertim q_grayscale înapoi la unsigned char
     vector<unsigned char> output_image_data(N); // 1 canal pentru imaginea de iesire grayscale
 
@@ -130,7 +137,7 @@ int main() {
     stbi_write_png("Images/Output/output_grayscale.png", width, height, 1, output_image_data.data(), width);
 
     cout << "Filtru aplicat cu succes. Rezultat: Images/Output/output_grayscale.png\n";
-
+    cout << "Timp aplicare filtru: " << time_taken << "s";
     // Eliberare memorie
     stbi_image_free(guide_image_data);
     stbi_image_free(process_image_data);

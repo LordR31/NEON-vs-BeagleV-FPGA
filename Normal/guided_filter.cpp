@@ -131,8 +131,8 @@ int main() {
         }
     }
 
-    int r = 0.5;       // Raza filtrului
-    double eps = 1; // Parametru de regularizare
+    int r = 1;       // Raza filtrului
+    double eps = 0.1; // Parametru de regularizare
 
     // Vectori pentru canalele filtrate de iesire (Y, U, și V)
     vector<double> q_Y(N); // New vector for filtered Y
