@@ -1,12 +1,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image.h"
-#include "stb_image_write.h"
+#include "../Headers/stb_image.h"
+#include "../Headers/stb_image_write.h"
 
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm> // Required for std::max and std::min
+#include <time.h>
+
 using namespace std;
 
 // box filter simplu: media locala
@@ -73,6 +75,9 @@ void guided_filter(const vector<double>& I, const vector<double>& p, vector<doub
 int main() {
     int width_I, height_I, channels_I_actual;
     int width_p, height_p, channels_p_actual;
+
+    clock_t start, end;
+    double time_taken;
 
     const int desired_channels_I = 3; // We want 3 channels for guide image (RGB for conversion)
     const int desired_channels_p = 1; // We want 1 channel for process image (grayscale)
@@ -141,15 +146,15 @@ int main() {
     // APELAREA FILTRULUI GHIDAT PENTRU FIECARE CANAL
     // Guide (I) is I_Y (luminance from target.png)
     // Input (p) is p_grayscale (luminance from input.png)
+    start = clock();
     cout << "Aplicare filtru ghidat pe canalul Y (Luminance)..." << endl;
     guided_filter(I_Y, p_grayscale, q_Y, width_I, height_I, r, eps);
-
-    // Guide (I) is p_grayscale (luminance from input.png) for U and V
-    // Input (p) is I_U/I_V (chrominance from target.png)
     cout << "Aplicare filtru ghidat pe canalul U (Chrominance Albastru-Galben)..." << endl;
     guided_filter(p_grayscale, I_U, q_U, width_I, height_I, r, eps);
     cout << "Aplicare filtru ghidat pe canalul V (Chrominance Rosu-Verde)..." << endl;
     guided_filter(p_grayscale, I_V, q_V, width_I, height_I, r, eps);
+    end = clock();
+    time_taken = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     // Acum trebuie să convertim înapoi q_Y, q_U și q_V la RGB
     vector<unsigned char> output_image_data(N * 3); // 3 canale pentru imaginea de iesire color
@@ -175,6 +180,7 @@ int main() {
     stbi_write_png("Images/Output/output.png", width_I, height_I, 3, output_image_data.data(), width_I * 3);
 
     cout << "Filtru aplicat cu succes. Rezultat: Images/Output/output.png\n";
+    cout << "Timp aplicare filtru: " << time_taken << "s\n";
 
     // Eliberare memorie
     stbi_image_free(guide_image_data);
