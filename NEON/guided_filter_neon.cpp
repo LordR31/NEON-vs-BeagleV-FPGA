@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <time.h>
 #include <arm_neon.h>
 
 using namespace std;
@@ -182,7 +183,10 @@ int main() {
     vector<float> q_grayscale(N); // Output grayscale image
 
     cout << "Aplicare filtru ghidat (grayscale)..." << endl;
+    start = clock();
     guided_filter(I_grayscale, p_grayscale, q_grayscale, width, height, r, eps);
+    end = clock();
+    time_taken = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     vector<unsigned char> output_image_data(N); // Output will be 1 channel (grayscale)
     for (int i = 0; i < N; i++) {
@@ -194,7 +198,8 @@ int main() {
     stbi_write_png("Images/Output/output_grayscale.png", width, height, 1, output_image_data.data(), width);
 
     cout << "Filtru NEON aplicat cu succes (grayscale): Images/Output/output_grayscale.png\n";
-
+    cout << "Timp aplicare filtru: " << time_taken << "s\n";
+    
     stbi_image_free(guide_image_data);
     stbi_image_free(process_image_data);
     return 0;
