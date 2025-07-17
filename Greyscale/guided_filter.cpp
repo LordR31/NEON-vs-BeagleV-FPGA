@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <algorithm> // Required for std::max and std::min
+#include <algorithm>
 #include <time.h>
 using namespace std;
 
@@ -96,11 +96,6 @@ int main() {
     }
     cout << "Imagine de procesat citita: " << width << " x " << height << " cu " << channels_actual << " canal (cerut: " << desired_channels << ")." << endl;
 
-    // No need to check dimensions, as stbi_load (when loading the second image) would overwrite
-    // width and height if they were different. We'll assume for simplicity that
-    // both images are of the same dimensions for this grayscale-only version.
-    // In a robust application, you'd load both images separately and then compare dimensions.
-
     int N = width * height; // Numarul total de pixeli
 
     // Vectori pentru imaginea de ghidare și de procesat (ambele grayscale)
@@ -113,7 +108,7 @@ int main() {
         p_grayscale[i] = process_image_data[i] / 255.0;
     }
 
-    int r = 1;          // Raza filtrului (am mărit-o un pic, 0.5 e cam mic pentru o rază în pixeli)
+    int r = 1;        // Raza filtrului (am mărit-o un pic, 0.5 e cam mic pentru o rază în pixeli)
     double eps = 0.1; // Parametru de regularizare (valoare tipică)
 
     // Vector pentru imaginea filtrată de ieșire (grayscale)
