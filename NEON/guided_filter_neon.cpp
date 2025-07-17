@@ -146,83 +146,54 @@ void guided_filter(const vector<float>& I, const vector<float>& p, vector<float>
 }
 
 int main() {
-    int width_I, height_I, channels_I_actual;
-    int width_p, height_p, channels_p_actual;
+    int width, height, channels_actual;
 
-    const int desired_channels_I = 3;
-    const int desired_channels_p = 1;
+    // We'll load both images as grayscale (1 channel)
+    const int desired_channels = 1;
 
-    unsigned char* guide_image_data = stbi_load("Images/Input/target.png", &width_I, &height_I, &channels_I_actual, desired_channels_I);
+    unsigned char* guide_image_data = stbi_load("Images/Input/target.png", &width, &height, &channels_actual, desired_channels);
     if (!guide_image_data) {
         cerr << "Eroare la citire target.png\n";
         return 1;
     }
 
-    unsigned char* process_image_data = stbi_load("Images/Input/input.png", &width_p, &height_p, &channels_p_actual, desired_channels_p);
+    unsigned char* process_image_data = stbi_load("Images/Input/input.png", &width, &height, &channels_actual, desired_channels);
     if (!process_image_data) {
         cerr << "Eroare la citire input.png\n";
         stbi_image_free(guide_image_data);
         return 1;
     }
 
-    if (width_I != width_p || height_I != height_p) {
-        cerr << "Eroare: Dimensiuni diferite!\n";
-        stbi_image_free(guide_image_data);
-        stbi_image_free(process_image_data);
-        return 1;
-    }
+    // Since we're loading both as grayscale, their dimensions should match if they originated from the same source
+    // No need for a separate width_I, height_I etc.
+    int N = width * height;
 
-    int N = width_I * height_I;
+    vector<float> I_grayscale(N); // Guide image (target.png)
+    vector<float> p_grayscale(N); // Input image to be filtered (input.png)
 
-    vector<float> I_Y(N), I_U(N), I_V(N);
-    vector<float> p_grayscale(N);
-
-    for (int i = 0; i < height_I; i++) {
-        for (int j = 0; j < width_I; j++) {
-            int idx = i * width_I + j;
-            int idx_rgb = idx * desired_channels_I;
-            float R = guide_image_data[idx_rgb] / 255.0f;
-            float G = guide_image_data[idx_rgb + 1] / 255.0f;
-            float B = guide_image_data[idx_rgb + 2] / 255.0f;
-
-            I_Y[idx] = 0.2126f * R + 0.7152f * G + 0.0722f * B;
-            I_U[idx] = -0.0999f * R - 0.3360f * G + 0.4360f * B + 0.5f;
-            I_V[idx] = 0.6150f * R - 0.5586f * G - 0.0563f * B + 0.5f;
-
-            p_grayscale[idx] = process_image_data[idx] / 255.0f;
-        }
+    for (int i = 0; i < N; i++) {
+        I_grayscale[i] = guide_image_data[i] / 255.0f;
+        p_grayscale[i] = process_image_data[i] / 255.0f;
     }
 
     int r = 5;
     float eps = 0.1f;
 
-    vector<float> q_Y(N), q_U(N), q_V(N);
+    vector<float> q_grayscale(N); // Output grayscale image
 
-    cout << "Filtru pe Y..." << endl;
-    guided_filter(I_Y, p_grayscale, q_Y, width_I, height_I, r, eps);
-    cout << "Filtru pe U..." << endl;
-    guided_filter(p_grayscale, I_U, q_U, width_I, height_I, r, eps);
-    cout << "Filtru pe V..." << endl;
-    guided_filter(p_grayscale, I_V, q_V, width_I, height_I, r, eps);
+    cout << "Aplicare filtru ghidat (grayscale)..." << endl;
+    guided_filter(I_grayscale, p_grayscale, q_grayscale, width, height, r, eps);
 
-    vector<unsigned char> output_image_data(N * 3);
+    vector<unsigned char> output_image_data(N); // Output will be 1 channel (grayscale)
     for (int i = 0; i < N; i++) {
-        float Y = q_Y[i];
-        float U = q_U[i] - 0.5f;
-        float V = q_V[i] - 0.5f;
-
-        float R = Y + 1.28033f * V;
-        float G = Y - 0.21482f * U - 0.38059f * V;
-        float B = Y + 2.12798f * U;
-
-        output_image_data[i * 3] = static_cast<unsigned char>(max(0.0f, min(255.0f, R * 255.0f)));
-        output_image_data[i * 3 + 1] = static_cast<unsigned char>(max(0.0f, min(255.0f, G * 255.0f)));
-        output_image_data[i * 3 + 2] = static_cast<unsigned char>(max(0.0f, min(255.0f, B * 255.0f)));
+        // Clamp and convert back to 0-255 range
+        output_image_data[i] = static_cast<unsigned char>(max(0.0f, min(255.0f, q_grayscale[i] * 255.0f)));
     }
 
-    stbi_write_png("Images/Output/output.png", width_I, height_I, 3, output_image_data.data(), width_I * 3);
+    // Write the grayscale output image
+    stbi_write_png("Images/Output/output_grayscale.png", width, height, 1, output_image_data.data(), width);
 
-    cout << "Filtru NEON aplicat cu succes: Images/Output/output.png\n";
+    cout << "Filtru NEON aplicat cu succes (grayscale): Images/Output/output_grayscale.png\n";
 
     stbi_image_free(guide_image_data);
     stbi_image_free(process_image_data);
