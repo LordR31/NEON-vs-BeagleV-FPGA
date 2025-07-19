@@ -7,7 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <time.h>
+#include <chrono>
 #include <omp.h> // Include OpenMP header
 
 using namespace std;
@@ -82,10 +82,6 @@ int main() {
     int width, height, channels_actual; // Use single width/height as both images must match
     const int desired_channels = 1; // We want 1 channel for grayscale
 
-    double start;
-    double end;
-    double time_taken;
-
     // CALEA CĂTRE IMAGINEA DE GHIDARE (ACUM GRAYSCALE)
     unsigned char* guide_image_data = stbi_load("Images/Input/target.png", &width, &height, &channels_actual, desired_channels);
     if (!guide_image_data) {
@@ -124,10 +120,10 @@ int main() {
 
     // APELAREA FILTRULUI GHIDAT PENTRU IMAGINILE GRAYSCALE
     cout << "Aplicare filtru ghidat pe imagini grayscale..." << endl;
-    start = omp_get_wtime(); // Get wall-clock time at the start
+    auto start_time = std::chrono::high_resolution_clock::now();
     guided_filter(I_grayscale, p_grayscale, q_grayscale, width, height, r, eps);
-    end = omp_get_wtime();   // Get wall-clock time at the end
-    time_taken = ((double) (end - start)) / CLOCKS_PER_SEC;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double>time_taken = end_time - start_time;
 
     // Acum trebuie să convertim q_grayscale înapoi la unsigned char
     vector<unsigned char> output_image_data(N); // 1 canal pentru imaginea de iesire grayscale
@@ -142,7 +138,7 @@ int main() {
     stbi_write_png("Images/Output/output_grayscale.png", width, height, 1, output_image_data.data(), width);
 
     cout << "Filtru aplicat cu succes. Rezultat: Images/Output/output_grayscale.png\n";
-    cout << "Timp aplicare filtru: " << time_taken << "s\n";
+    cout << "Timp aplicare filtru: " << time_taken.count() << "s\n";
     // Eliberare memorie
     stbi_image_free(guide_image_data);
     stbi_image_free(process_image_data);
