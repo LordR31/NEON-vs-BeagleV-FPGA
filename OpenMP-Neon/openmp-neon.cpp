@@ -8,7 +8,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <time.h>
+#include <chrono>
 #include <omp.h>
 #include <arm_neon.h>
 
@@ -82,8 +82,6 @@ int main() {
     int width, height, channels_actual;
     const int desired_channels = 1;
 
-    double start, end, time_taken;
-
     unsigned char* guide_image_data = stbi_load("Images/Input/target.png", &width, &height, &channels_actual, desired_channels);
     if (!guide_image_data) {
         cerr << "Eroare la citire target.png\n";
@@ -128,10 +126,10 @@ int main() {
     vector<double> q_grayscale(N);
 
     cout << "Aplicare filtru ghidat pe imagini grayscale..." << endl;
-    start = omp_get_wtime();
+    auto start_time = std::chrono::high_resolution_clock::now();
     guided_filter(I_grayscale, p_grayscale, q_grayscale, width, height, r, eps);
-    end = omp_get_wtime();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double>time_taken = end_time - start_time;
 
     vector<unsigned char> output_image_data(N);
     #pragma omp parallel for
@@ -142,7 +140,7 @@ int main() {
     stbi_write_png("Images/Output/output_grayscale.png", width, height, 1, output_image_data.data(), width);
 
     cout << "Filtru aplicat cu succes. Rezultat: Images/Output/output_grayscale.png\n";
-    cout << "Timp aplicare filtru: " << time_taken << "s\n";
+    cout << "Timp aplicare filtru: " << time_taken.count() << "s\n";
 
     stbi_image_free(guide_image_data);
     stbi_image_free(process_image_data);

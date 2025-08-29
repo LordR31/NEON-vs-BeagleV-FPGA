@@ -8,7 +8,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <time.h>
+#include <chrono>
 #include <arm_neon.h>
 
 using namespace std;
@@ -77,10 +77,6 @@ int main() {
     int width, height, channels_actual;
     const int desired_channels = 1;
 
-    clock_t start;
-    clock_t end;
-    double time_taken;
-
     unsigned char* guide_image_data = stbi_load("Images/Input/target.png", &width, &height, &channels_actual, desired_channels);
     if (!guide_image_data) {
         cerr << "Eroare la citire target.png\n";
@@ -136,10 +132,10 @@ int main() {
     vector<double> q_grayscale(N);
 
     cout << "Aplicare filtru ghidat pe imagini grayscale..." << endl;
-    start = clock();
+    auto start_time = std::chrono::high_resolution_clock::now();
     guided_filter(I_grayscale, p_grayscale, q_grayscale, width, height, r, eps);
-    end = clock();
-    time_taken = ((double)(end - start)) / CLOCKS_PER_SEC;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_taken = end_time - start_time; 
 
     vector<unsigned char> output_image_data(N);
     for (int i = 0; i < N; i++) {
@@ -149,7 +145,7 @@ int main() {
     stbi_write_png("Images/Output/output_grayscale.png", width, height, 1, output_image_data.data(), width);
 
     cout << "Filtru aplicat cu succes. Rezultat: Images/Output/output_grayscale.png\n";
-    cout << "Timp aplicare filtru: " << time_taken << "s\n";
+    cout << "Timp aplicare filtru: " << time_taken.count() << "s\n";
 
     stbi_image_free(guide_image_data);
     stbi_image_free(process_image_data);
